@@ -32,77 +32,111 @@ conn = pymysql.Connect(
 cur = conn.cursor()
 
 
-# 列类型校验
-@app02.route('/type')
-def checkType():
-
-    sql = "DESC datagovernance.testdata"
+@app02.route('/checkType/<database>/<table>/<field>',methods=['GET','POST'])
+def checkType(database,table,field):
+    """
+    列类型校验
+    :param database: 校验数据库
+    :param table: 校验数据表
+    :param field: 校验列
+    :return: 校验列在mysql中的存储类型
+    """
+    db = database
+    tb = table
+    fd = field
+    sql = "DESC "+db+"."+tb
     columnType = pd.read_sql(sql, conn)
     # 获取某个字段的数据类型
-    ftype = columnType['Key'][columnType['Field'] == 'age']
+    ftype = columnType['Type'][columnType['Field'] == fd]
     res = str(ftype.values[0])
     typeStr,lenColumn = res.split('(')
     lenColumn,_ = lenColumn.split(')')
     return jsonify({typeStr:str(lenColumn)})
 
-# 单字段主键校验
-@app02.route('/pri')
-def checkPri():
 
-    sql = "DESC datagovernance.testdata"
+@app02.route('/checkPri/<database>/<table>/<field>',methods=['GET','POST'])
+def checkPri(database,table,field):
+    """
+    单字段主键校验
+    :param database: 校验数据库名称
+    :param table: 校验数据表
+    :param field: 校验列
+    :return: 返回主键校验结果
+    """
+    db = database
+    tb = table
+    fd = field
+    sql = "DESC "+db+"."+tb
+    print(sql)
     columnInfo = pd.read_sql(sql, conn)
     # 获取某个字段的数据主键信息
-    isPri = columnInfo['Key'][columnType['Field'] == 'id']
-    if isPri == '':
-        print('校验列为非主键列')
+    isPri, = columnInfo['Key'][columnInfo['Field'] == fd].values
+    print(isPri)
+    if isPri == 'PRI':
+        return jsonify({fd:isPri})
     else:
-        print("校验列为主键列")
-    return jsonify({'id':isPri})
+        return jsonify({fd:"NOT PRI"})
 
 
-# 联合主键校验
-@app02.route('/unionPri')
-def checkUnionPri():
-
-    sql = "DESC datagovernance.testdata"
+@app02.route('/checkUnionPri/<database>/<table>/<field>',methods=['GET','POST'])
+def checkUnionPri(database,table,field):
+    """
+    联合主键校验
+    :param database: 校验数据库
+    :param table: 校验数据表
+    :param field: 校验列
+    :return: 返回联合主键校验结果
+    """
+    db = database
+    tb = table
+    fd = field
+    sql = "DESC "+db+"."+tb
     columnInfo = pd.read_sql(sql, conn)
     # 获取检验列联合主键信息
     uPriInfo = columnInfo[['Field','Type']][columnInfo['Key']=='PRI']
     uPriList = list(uPriInfo['Field'])
-    # 假定age为检验列
-    if "age" in uPriList:
-        print("age 是联合主键")
+    # 是否需要返回联合主键列表
+    if fd in uPriList and len(uPriList)>1:
+        return jsonify({fd:"unionPri"})
     else:
-        print("非联合主键")
-    # 联合主键信息
-    res = dict({"uPri":uPriList})
-    return jsonify(res)
+        return jsonify({fd:"NOT unionPri"})
 
 
-# 精度校验
-@app02.route('/precision/{db}/{tb}')
-def checkPrecision():
-
-    sql = "SHOW FULL COLUMNS FROM datagovernance.testdata"
+@app02.route('/checkPrecision/<database>/<table>/<field>',methods=['GET','POST'])
+def checkPrecision(database,table,field):
+    """
+    精度校验，校验小数点位数(计量单位校验待定)
+    :param database: 校验数据库
+    :param table: 校验数据表
+    :param field: 校验列
+    :return: 校验列的小数点位数
+    """
+    db = database
+    tb = table
+    fd = field
+    sql = "SHOW FULL COLUMNS FROM "+db+"."+tb
     columnInfo = pd.read_sql(sql, conn)
     # 获取校验列的精度信息，计量单位，小数位数
     precisionInfo = columnInfo[['Field','Type','Comment']]
     # data为校验字段
-    xsws = precisionInfo['Type'][precisionInfo['Field']=='data']
+    xsws = precisionInfo['Type'][precisionInfo['Field']== fd]
     typeSplit = re.split(r"[',',')']", xsws.values[0])
     if len(typeSplit) > 2:
         # decimalDigits为小数位数
         _, decimalDigits, _ = typeSplit
+        return jsonify({fd:decimalDigits})
     else:
-        print("校验列没有小数位")
-    # 获取计量单位unitOfMeasurement
-    unitOfMeasurement = precisionInfo['Comment'][precisionInfo['Field'] == 'data'].values[0]
-    if unitOfMeasurement == '':
-        print('校验列没有计量单位')
-    else:
-        print("校验列的计量单位为:"+unitOfMeasurement)
-    res = {"decimalDigits":decimalDigits}
-    return jsonify(res)
+        return "校验列没有小数位"
+    #  获取计量单位unitOfMeasurement
+    # unitOfMeasurement = precisionInfo['Comment'][precisionInfo['Field'] == fd].values[0]
+    # if unitOfMeasurement == '':
+    #     print('校验列没有计量单位')
+    # else:
+    #     print("校验列的计量单位为:"+unitOfMeasurement)
+    # res = {"decimalDigits":decimalDigits}
+    # return jsonify(res)
+
+
 # @app02.route('/')
 # def show():
 #     return 'app02.hello'

@@ -3,9 +3,11 @@
 # @Author Ma Guichang
 
 """
- 5.长度校验，检验列，长度要求
-    a) 输入列名，检验该列的数据的长度是否符合要求（以手机号/身份证长度为例）
-    ?) 格式的校验结果返回什么，不符合邮箱格式的数量与索引？
+ 5.重复数据校验（暂时输入的检验列为一个字段，后期需要对输入参数进行调整）
+ 重复数据检查用于检查表内是否有重复数据。
+ 选定实体表并添加需检查的字段，如果仅需检查部分数据，可在过滤条件中输入过滤表达式。
+ 例如：选择实体表USER并添加重复依据字段name、phone，其他设置默认。
+ 代表：如果数据中存在name字段和phone字段值都相同的多条数据，则被认定为重复数据，该规则算错 。
 """
 import pymysql
 import pandas as pd
@@ -28,20 +30,27 @@ conn = pymysql.Connect(
 )
 cur = conn.cursor()
 
+@app05.route('/checkDuplicate/<database>/<table>/<field>',methods = ['GET','POST'])
+def checkFormat(database,table,field):
+    """
+    重复数据校验
+    :param database: 校验数据库
+    :param table: 校验数据表
+    :param field: 校验列
+    :return: 包含的重复数据记录数
+    """
+    db = database
+    tb = table
+    fd = field
+    sql = "SELECT " + fd + " FROM " + db + "." + tb
+    dfData = pd.read_sql(sql, conn) # 一次性读取，测试性能时可分批读取
+    checkData = dfData.duplicated().value_counts()
+    # 重复数据记录数
+    duplicateNum = checkData[True]
+    # 唯一数据记录数
+    uniqueNum = checkData[False]
+    return jsonify({"duplicateNum":str(duplicateNum),"uniqueNum":str(uniqueNum)})
+
 @app05.route('/')
-def checkFormat():
-
-    sql = "SELECT * from datagovernance.testdata"
-    dfData = pd.read_sql(sql, conn, chunksize=2000)
-    length_num = 0
-    # 检验该列所有数据的格式
-    for df in dfData:
-        for d in df['emailinfo']:
-            # 校验手机号11位
-            if length(d,min= 11,max=11):
-                length_num = length_num+1
-    return str(length_num)
-
-# @app05.route('/')
-# def show():
-#     return 'app05.hello'
+def show():
+    return 'app05.hello'

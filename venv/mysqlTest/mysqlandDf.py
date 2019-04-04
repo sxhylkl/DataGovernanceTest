@@ -5,7 +5,8 @@
 test SQL -> Dataframe
 """
 
-from flask import jsonify
+from flask import jsonify,request
+from enum import Enum
 import json
 import re
 import pymysql
@@ -30,7 +31,16 @@ from flask import Flask,render_template,request,url_for
 # DATABASE_PASSWORD = app.config.get('MYSQL_PWD')
 # # 数据库字符编码
 # DATABASE_CHARSET = app.config.get('MYSQL_CHARSET')
-
+class Address(Enum):
+    beijing = 1
+    shanghai = 2
+    xianggang = 3
+    tianjin = 4
+    chongqing = 5
+    aomen = 6
+    taibei = 7
+    shenzhen = 8
+    guangzhou = 9
 def get_df_from_db(sql,connection,chunksize):
     return pd.read_sql(sql,connection,chunksize)
 
@@ -38,62 +48,65 @@ if __name__ == '__main__':
 
     # app.run(host='0.0.0.0', port=6666)
 
+
     # starttime = datetime.datetime.now()
     # # 导入数据库配置参数
     para = dbConfig.Config()
+    for ad in Address.__members__.keys():
+        print(ad)
     # 创建数据库连接
-    conn = pymysql.Connect(
-        host = para.MYSQL_URI,
-        port = para.MYSQL_PORT,
-        user = para.MYSQL_USER,
-        passwd = para.MYSQL_PWD,
-        db = para.MYSQL_DB,
-        charset = para.MYSQL_CHARSET
-    )
-    cur = conn.cursor()
-    null_num = 0
-    sql = "select * from datagovernance.testdata"
-    # # 分片读取大数据量
-    # # dfData = pd.read_sql(sql,conn,chunksize = 2000)
+    # conn = pymysql.Connect(
+    #     host = para.MYSQL_URI,
+    #     port = para.MYSQL_PORT,
+    #     user = para.MYSQL_USER,
+    #     passwd = para.MYSQL_PWD,
+    #     db = para.MYSQL_DB,
+    #     charset = para.MYSQL_CHARSET
+    # )
+    # cur = conn.cursor()
+    # null_num = 0
+    # sql = "select * from datagovernance.testdata"
+    # # # 分片读取大数据量
+    # # # dfData = pd.read_sql(sql,conn,chunksize = 2000)
+    # #
+    # # sql2 = "DESC datagovernance.testdata"
+    # sql2 = "SHOW FULL COLUMNS FROM datagovernance.testdata"
+    # precisionInfo = pd.read_sql(sql2,conn)
+    # print(precisionInfo)
     #
-    # sql2 = "DESC datagovernance.testdata"
-    sql2 = "SHOW FULL COLUMNS FROM datagovernance.testdata"
-    precisionInfo = pd.read_sql(sql2,conn)
-    print(precisionInfo)
-
-    # 小数位数
-    xsws = precisionInfo['Type'][precisionInfo['Field'] == 'data']
-    print(xsws.values[0])
-    print('小数位数')
-    print(re.split(r"[',',')']",xsws.values[0]))
-    _,d,_=re.split(r"[',',')']", xsws.values[0])
-    print(d)
-    _,ws = str(xsws.values[0]).split(',')
-    w,_= ws.split(')')
-    # unitOfMeasurement = precisionInfo['Comment'][precisionInfo['Field'] == 'data']
-    unitOfMeasurement = precisionInfo['Comment'][precisionInfo['Field'] == 'age'].values[0]
-    print("计量单位")
-    print(unitOfMeasurement)
-
-    print(w)
-    # 获取某个字段的数据类型
+    # # 小数位数
+    # xsws = precisionInfo['Type'][precisionInfo['Field'] == 'data']
+    # print(xsws.values[0])
+    # print('小数位数')
+    # print(re.split(r"[',',')']",xsws.values[0]))
+    # _,d,_=re.split(r"[',',')']", xsws.values[0])
+    # print(d)
+    # _,ws = str(xsws.values[0]).split(',')
+    # w,_= ws.split(')')
+    # # unitOfMeasurement = precisionInfo['Comment'][precisionInfo['Field'] == 'data']
+    # unitOfMeasurement = precisionInfo['Comment'][precisionInfo['Field'] == 'age'].values[0]
+    # print("计量单位")
+    # print(unitOfMeasurement)
     #
-    # # print(columnType['Type'][columnType['Field']=='age'])
-    # cc = columnType['Key'][columnType['Field']=='age']
-    cc = pd.DataFrame(columnType)
-
-    print(columnType[['Field','Type','Comment']][columnType['Field']=='data'])
-    c = columnType[['Field', 'Key']][columnType['Key'] == 'PRI']
-    print(list(c['Field']))
-    if "id" in list(c['Field']):
-        print("联合主键")
-    else:
-        print("不是联合主键")
-    print(dict({"upri":list(c['Field'])}))
-
-
-
-    print(type(cc))
+    # print(w)
+    # # 获取某个字段的数据类型
+    # #
+    # # # print(columnType['Type'][columnType['Field']=='age'])
+    # # cc = columnType['Key'][columnType['Field']=='age']
+    # cc = pd.DataFrame(columnType)
+    #
+    # print(columnType[['Field','Type','Comment']][columnType['Field']=='data'])
+    # c = columnType[['Field', 'Key']][columnType['Key'] == 'PRI']
+    # print(list(c['Field']))
+    # if "id" in list(c['Field']):
+    #     print("联合主键")
+    # else:
+    #     print("不是联合主键")
+    # print(dict({"upri":list(c['Field'])}))
+    #
+    #
+    #
+    # print(type(cc))
     # if cc.values[0] =='':
     #     print("非主键")
     # else:
@@ -171,10 +184,11 @@ if __name__ == '__main__':
     # 14.双表参照性校验
 
 
-
     # # 验证数值取值范围
     # print(between(5, min=2))
-    # print(between(13.2, min=13, max=14))
+    res = between(13.2, min=13, max=14)
+    print(res)
+    print(type(res))
     # print(between(40, max=400))
     # # 验证邮箱
     # res = email('mgc5320@163.com')

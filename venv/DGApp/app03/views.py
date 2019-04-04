@@ -9,7 +9,10 @@
     b) 枚举，区间，字符 in，日期,需要四个方法
 """
 import pymysql
+from datetime import datetime
+import numpy as np
 import pandas as pd
+from enum import Enum,IntEnum,unique
 from flask import Blueprint,jsonify
 from DGApp.Configlist import dbConfig
 # 校验值域，长度，邮件
@@ -29,36 +32,49 @@ conn = pymysql.Connect(
 )
 cur = conn.cursor()
 
-@app03.route('/')
-def checkValueRange():
-
-    # 数值区间
-    def valueRange(data,minData,maxData):
-        if between(data,min = minData,max = maxData):
-            pass
-        return "valueRange"
-    # 字符 in
-    def charIn(des,src):
-        if src in des:
-            pass
-        return  "charIn"
-
-    # 日期 in
-    def dateIn(startDate,endDate):
-        pass
-
-    sql = "SELECT * from datagovernance.testdata"
-    dfData = pd.read_sql(sql, conn, chunksize=2000)
-
+@app03.route('/checkValueRange/<rangeType>/<minValue>/<maxValue>/<database>/<table>/<field>',methods = ['GET','POST'])
+def checkValueRange(rangeType,minValue,maxValue,database,table,field):
+    """
+    值域校验: 数值区间，字符in，日期范围，
+    :param database: 校验数据库
+    :param table: 校验数据表
+    :param field: 校验列
+    :return:
+    """
+    db = database
+    tb = table
+    fd = field
     accordValueRangeNum = 0
+    sql = "SELECT "+fd+" from "+db+"."+tb
+    dfData = pd.read_sql(sql, conn, chunksize=2000)
+    # print(minValue,maxValue)
+
     # 检验该列数据的值域
-    for df in dfData:
-        for d in df:
-            if between(d,min=13, max=50):
-                accordValueRangeNum = accordValueRangeNum +1
+    if rangeType == 'valueRange':
+        for df in dfData:
+            for d in df[fd]:
+                if between(d, min = np.float(minValue), max = np.float(maxValue)):
+                    accordValueRangeNum = accordValueRangeNum +1
+        return str(accordValueRangeNum)
+    # 字符枚举
+    elif rangeType == 'charIn':
+        for df in dfData:
+            for d in df[fd]:
+                if d in [minValue,maxValue]:
+                    accordValueRangeNum = accordValueRangeNum + 1
+        return str(accordValueRangeNum)
+    # 时间区间
+    elif rangeType == 'dateIn':
+        mindate = datetime.strptime(minValue,'%Y-%m-%d %H:%M:%S')
+        maxdate = datetime.strptime(maxValue,'%Y-%m-%d %H:%M:%S')
+        for df in dfData:
+            for d in df[fd]:
+                if mindate<d<maxdate:
+                    accordValueRangeNum = accordValueRangeNum + 1
+        return  str(accordValueRangeNum)
 
-    return str(ftype.values[0])
-
+# 访问示例127.0.0.1:5000/app03/checkValueRange/charIn/beijing/shanghai/datagovernance/testdata/address
+# 访问示例127.0.0.1:5000/app03/checkValueRange/dateIn/2019-03-01 11:13:58/2019-04-04 11:13:58/datagovernance/testdata/dtime
 # @app03.route('/')
 # def show():
 #     return 'app03.hello'

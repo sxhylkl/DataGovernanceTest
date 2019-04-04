@@ -11,10 +11,11 @@ import re
 """
 def checkPhone(tel):
     ret = re.match(r"^1[35678]\d{9}$", tel)
-    if ret:
-        print("匹配成功")
-    else:
-        print("匹配失败")
+    # if ret:
+    #     print("匹配成功")
+    # else:
+    #     print("匹配失败")
+    return ret
 
 """
 校验身份证
@@ -28,12 +29,14 @@ def checkIdcard(idcard):
             "61": "陕西", "62": "甘肃", "63": "青海", "64": "宁夏", "65": "新疆", "71": "台湾", "81": "香港", "82": "澳门", "91": "国外"}
     idcard = str(idcard)
     idcard = idcard.strip()
-    print("idcard:"+idcard)
+    # print("idcard:"+idcard)
     idcard_list = list(idcard)
 
     # 地区校验
     if (not area[(idcard)[0:2]]):
-        print(Errors[4])
+        # print(Errors[4])
+        return Errors[4]
+
     # 15位身份号码检测
     if (len(idcard) == 15):
         if ((int(idcard[6:8]) + 1900) % 4 == 0 or (
@@ -44,9 +47,11 @@ def checkIdcard(idcard):
             ereg = re.compile(
                 '[1-9][0-9]{5}[0-9]{2}((01|03|05|07|08|10|12)(0[1-9]|[1-2][0-9]|3[0-1])|(04|06|09|11)(0[1-9]|[1-2][0-9]|30)|02(0[1-9]|1[0-9]|2[0-8]))[0-9]{3}$')  # //测试出生日期的合法性
         if (re.match(ereg, idcard)):
-            print(Errors[0])
+            # print(Errors[0])
+            return True
         else:
-            print(Errors[2])
+            # print(Errors[2])
+            return Errors[2]
     # 18位身份号码检测
     elif (len(idcard) == 18):
         # 出生日期的合法性检查
@@ -73,24 +78,28 @@ def checkIdcard(idcard):
             JYM = "10X98765432"
             M = JYM[Y]  # 判断校验位
             if (M == idcard_list[17]):  # 检测ID的校验位
-                print(Errors[0])
+                # print(Errors[0])
+                return True
             else:
-                print(Errors[3])
+                # print(Errors[3])
+                return Errors[3]
         else:
-            print(Errors[2])
+            # print(Errors[2])
+            return Errors[2]
     else:
-        print(Errors[1])
+        # print(Errors[1])
+        return Errors[1]
 
 
-if __name__ == "__main__":
-    while True:
-        cdcard = input(u"请输入你的身份证号：")
-        tel = input(u"请输入你的手机号：")
-        print(cdcard)
-
-        checkPhone(tel)
-        if cdcard == "exit":
-            print(u"程序已结束！")
-            # break
-        else:
-            checkIdcard(cdcard)
+# if __name__ == "__main__":
+#     while True:
+#         cdcard = input(u"请输入你的身份证号：")
+#         tel = input(u"请输入你的手机号：")
+#         print(cdcard)
+#
+#         checkPhone(tel)
+#         if cdcard == "exit":
+#             print(u"程序已结束！")
+#             # break
+#         else:
+#             checkIdcard(cdcard)
